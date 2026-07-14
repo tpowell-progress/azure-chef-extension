@@ -132,6 +132,27 @@ export_env_vars() {
   eval $commands
 }
 
+# Read chef_license_key from settings and export CHEF_LICENSE_KEY
+read_chef_license_key(){
+  chef_extension_directory_path=$1
+  config_file_name=$(get_config_settings_file $chef_extension_directory_path)
+  chef_license_key_value=$(get_value_from_setting_file $config_file_name "chef_license_key" &)
+  if [ ! -z "$chef_license_key_value" ]; then
+    eval "export CHEF_LICENSE_KEY=$chef_license_key_value;"
+    echo "Set CHEF_LICENSE_KEY environment variable from chef_license_key setting"
+  fi
+}
+
+# Log the license key status for observability
+log_license_key_status(){
+  if [ -z "$CHEF_LICENSE_KEY" ]; then
+    echo "[$(date)] WARNING: No chef_license_key provided. Omnitruck is being shut down — unlicensed downloads will stop working in the near future. Set chef_license_key in your extension settings to use licensed/commercial downloads." >&2
+    echo "[$(date)] Falling back to omnitruck download (DEPRECATED — will stop working when omnitruck is shut down)"
+  else
+    echo "[$(date)] CHEF_LICENSE_KEY is set from chef_license_key; licensed download will be attempted"
+  fi
+}
+
 # To set environment variable to new shell
 read_environment_variables(){
   chef_extension_directory_path=$1

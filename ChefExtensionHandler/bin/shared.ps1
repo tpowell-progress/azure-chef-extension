@@ -202,6 +202,28 @@ function Get-autoUpdateClientSetting{
   Get-JsonValueUsingRuby "$chefExtensionParent\\$extensionPreviousVersion\\RuntimeSettings\\$latestSettingFile" "runtimeSettings" 0 "handlerSettings" "publicSettings" "autoUpdateClient"
 }
 
+function Get-ChefLicenseKey($powershellVersion) {
+  Get-PublicSettings-From-Config-Json "chef_license_key" $powershellVersion
+}
+
+function Set-ChefLicenseKeyEnv($licenseKey) {
+  if ($licenseKey) {
+    $envObj = New-Object -TypeName System.Management.Automation.PSObject -Property @{CHEF_LICENSE_KEY=$licenseKey}
+    Chef-SetCustomEnvVariables $envObj (Get-PowershellVersion)
+    Write-Host "Set CHEF_LICENSE_KEY environment variable from chef_license_key setting"
+  }
+}
+
+function Write-LicenseKeyStatus($licenseKey) {
+  if (-Not $licenseKey) {
+    # ponytail: omnitruck shutdown is announced; warn loudly so users migrate before it breaks
+    Write-Warning "[$(Get-Date)] WARNING: No chef_license_key provided. Omnitruck is being shut down — unlicensed downloads will stop working in the near future. Set chef_license_key in your extension settings to use licensed/commercial downloads."
+    Write-Host "[$(Get-Date)] Falling back to omnitruck download (DEPRECATED — will stop working when omnitruck is shut down)"
+  } else {
+    Write-Host "[$(Get-Date)] CHEF_LICENSE_KEY is set from chef_license_key; licensed commercial download will be used"
+  }
+}
+
 function Get-PublicSettings-From-Config-Json($key, $powershellVersion) {
   Try
   {
